@@ -5,6 +5,7 @@
   "packageManager": "pnpm@9.12.0",
   "scripts": {
     "lint": "pnpm -r lint",
+    "check": "pnpm lint && cross-env DATABASE_URL=postgresql://ci:ci@localhost:5432/ci pnpm --filter backend prisma:generate && pnpm typecheck && pnpm test && pnpm build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "build": "pnpm -r build",
@@ -18,6 +19,16 @@
     "dev:all:local": "bash scripts/dev-all-local.sh",
     "dev:infra:down": "docker-compose -f deploy/compose/compose.infra.yml down",
     "smoke:flow": "bash scripts/smoke-flow.sh",
-    "seed": "pnpm --filter backend prisma:seed"
+    "seed": "pnpm --filter backend prisma:seed",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.3.0"
+  },
+  "lint-staged": {
+    "apps/**/*.{js,jsx,ts,tsx}": "pnpm exec eslint --max-warnings=0 --fix",
+    "packages/**/*.{js,jsx,ts,tsx}": "pnpm exec eslint --max-warnings=0 --fix"
   }
 }

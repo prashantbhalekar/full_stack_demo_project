@@ -263,6 +263,27 @@ pnpm --filter worker build
 
 ---
 
+## 9.1) Git Hooks (Pre-commit and Pre-push)
+
+Hook tooling in this repo:
+
+```bash
+pnpm add -Dw husky lint-staged
+pnpm exec husky init
+```
+
+Configured behavior:
+
+- `.husky/pre-commit` runs `pnpm lint-staged`
+- `.husky/pre-push` runs `pnpm typecheck && pnpm test && pnpm build`
+
+Root `package.json` contains:
+
+- `prepare` script to install hooks automatically after install
+- `lint-staged` config for staged JS/TS files under `apps/` and `packages/`
+
+---
+
 ## 10) Backend Tests
 
 Unit/service + mocked e2e suite:

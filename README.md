@@ -139,6 +139,23 @@ pnpm test
 pnpm build
 ```
 
+## Git Hooks (Pre-commit and Pre-push)
+
+This repository uses Husky hooks:
+
+- pre-commit: runs `pnpm lint-staged` on staged files.
+- pre-push: runs `pnpm check`.
+
+Root `check` command runs:
+
+- `pnpm lint`
+- `cross-env DATABASE_URL=postgresql://ci:ci@localhost:5432/ci pnpm --filter backend prisma:generate`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm build`
+
+Hooks are installed automatically after `pnpm install` via the root `prepare` script.
+
 Backend service tests are included for login status behavior and approval decision paths.
 
 API e2e tests are included for:
