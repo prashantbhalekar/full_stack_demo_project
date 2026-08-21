@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiRequest } from "@/lib/api";
+import { ApiRequestError, apiRequest } from "@/lib/api";
 import { clearTokens, saveTokens } from "@/lib/auth";
 import { resolveUserRoute } from "@/lib/route-guard";
 
@@ -35,18 +35,19 @@ export default function LoginPage() {
         body: { email, password },
       });
       saveTokens(data.accessToken, data.refreshToken);
-      router.push(resolveUserRoute(data.user.status as never, data.user.portal as never));
+      router.push(
+        resolveUserRoute(data.user.status as never, data.user.portal as never),
+      );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Login failed";
-      if (msg.includes("PENDING_APPROVAL")) {
+      if (err instanceof ApiRequestError && err.code === "PENDING_APPROVAL") {
         router.push("/pending-approval");
         return;
       }
-      if (msg.includes("REJECTED")) {
+      if (err instanceof ApiRequestError && err.code === "REJECTED") {
         router.push("/rejected");
         return;
       }
-      setError(msg);
+      setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
     }
@@ -57,16 +58,34 @@ export default function LoginPage() {
       <h1>Login</h1>
       <form onSubmit={submit}>
         <p>
-          <input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input
+            placeholder="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
         </p>
         <p>
-          <input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <input
+            placeholder="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
         </p>
-        <button type="submit" disabled={loading}>{loading ? "Signing in..." : "Login"}</button>
+        <button type="submit" disabled={loading}>
+          {loading ? "Signing in..." : "Login"}
+        </button>
       </form>
       {error ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
-      <p><Link href="/auth/register/customer">Register as customer</Link></p>
-      <p><Link href="/auth/register/vendor">Register as vendor</Link></p>
+      <p>
+        <Link href="/auth/register/customer">Register as customer</Link>
+      </p>
+      <p>
+        <Link href="/auth/register/vendor">Register as vendor</Link>
+      </p>
     </div>
   );
 }

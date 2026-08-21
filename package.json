@@ -8,10 +8,16 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "build": "pnpm -r build",
-    "dev:infra": "docker compose -f deploy/compose/compose.infra.yml up -d",
+    "dev:infra": "docker network create full_stack_demo_network || true && docker-compose -f deploy/compose/compose.infra.yml up -d",
     "dev:backend": "pnpm --filter backend dev",
     "dev:worker": "pnpm --filter worker dev",
     "dev:frontend": "pnpm --filter frontend dev",
+    "dev:backend:local": "bash scripts/dev-backend-local.sh",
+    "dev:worker:local": "bash scripts/dev-worker-local.sh",
+    "dev:frontend:local": "bash scripts/dev-frontend-local.sh",
+    "dev:all:local": "bash scripts/dev-all-local.sh",
+    "dev:infra:down": "docker-compose -f deploy/compose/compose.infra.yml down",
+    "smoke:flow": "bash scripts/smoke-flow.sh",
     "seed": "pnpm --filter backend prisma:seed"
   }
 }

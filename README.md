@@ -58,8 +58,7 @@ pnpm install
 ## Run Local Infra
 
 ```bash
-docker network create full_stack_demo_network || true
-docker-compose -f deploy/compose/compose.infra.yml up -d
+pnpm dev:infra
 docker-compose -f deploy/compose/compose.infra.yml ps
 ```
 
@@ -83,16 +82,52 @@ Backend:
 DATABASE_URL='postgresql://postgres:postgres@localhost:5433/full_stack_demo' REDIS_URL='redis://localhost:6380' JWT_ACCESS_SECRET='dev-access-secret' JWT_REFRESH_SECRET='dev-refresh-secret' JWT_ACCESS_TTL='15m' JWT_REFRESH_TTL='7d' PORT='3001' pnpm --filter backend start
 ```
 
+Backend with local defaults (no manual env export):
+
+```bash
+pnpm dev:backend:local
+```
+
 Worker:
 
 ```bash
 REDIS_URL='redis://localhost:6380' pnpm --filter worker start
 ```
 
+Worker with local defaults:
+
+```bash
+pnpm dev:worker:local
+```
+
 Frontend:
 
 ```bash
 pnpm --filter frontend dev
+```
+
+Frontend with local defaults:
+
+```bash
+pnpm dev:frontend:local
+```
+
+All services with one command (infra + backend + worker + frontend):
+
+```bash
+pnpm dev:all:local
+```
+
+Stop local infra:
+
+```bash
+pnpm dev:infra:down
+```
+
+Run one-command CLI smoke flow (register -> approval -> login checks):
+
+```bash
+pnpm smoke:flow
 ```
 
 ## Quality Checks
@@ -103,6 +138,17 @@ pnpm typecheck
 pnpm test
 pnpm build
 ```
+
+Backend service tests are included for login status behavior and approval decision paths.
+
+API e2e tests are included for:
+
+- health endpoint
+- unauthorized dashboard access
+- pending user login rejection
+- live register -> approve -> dashboard flow (DB + Redis required)
+
+Frontend integration tests are included for auth redirect guard behavior.
 
 ## API Endpoints
 
@@ -126,6 +172,7 @@ pnpm build
 ## CI/CD Workflows
 
 - `ci.yml`: lint, typecheck, tests, build
+- `ci.yml` includes a `backend-live-e2e` job with PostgreSQL and Redis service containers
 - `deploy-backend.yml`: triggers on backend/worker/shared changes, runs migrate deploy, builds backend + worker
 - `deploy-frontend.yml`: triggers on frontend/shared changes, builds/deploys frontend only
 

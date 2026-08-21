@@ -3,8 +3,7 @@ import type { Config } from "jest";
 const config: Config = {
   moduleFileExtensions: ["js", "json", "ts"],
   rootDir: "src",
-  testRegex: ".*(\\.spec\\.ts$|\\.e2e-spec\\.ts$)",
-  testPathIgnorePatterns: ["app.live-e2e-spec.ts"],
+  testMatch: ["**/app.live-e2e-spec.ts"],
   transform: {
     "^.+\\.ts$": [
       "ts-jest",
@@ -15,8 +14,6 @@ const config: Config = {
       },
     ],
   },
-  collectCoverageFrom: ["**/*.(t|j)s"],
-  coverageDirectory: "../coverage",
   testEnvironment: "node",
 };
 

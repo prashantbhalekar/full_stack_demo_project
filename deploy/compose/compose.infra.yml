@@ -39,3 +39,4 @@ volumes:
 networks:
   app_net:
     name: full_stack_demo_network
+    external: true

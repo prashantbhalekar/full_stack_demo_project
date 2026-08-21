@@ -2,21 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiRequest } from "@/lib/api";
+import { ensureAuthorizedUser } from "@/lib/guards";
 
 export default function CustomerDashboardPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    apiRequest<{ portal: string; status: string; email: string }>("/auth/me", { auth: true })
-      .then((me) => {
-        if (me.status === "PENDING") return router.replace("/pending-approval");
-        if (me.status === "REJECTED") return router.replace("/rejected");
-        if (me.portal !== "CUSTOMER") return router.replace("/auth/login");
+    ensureAuthorizedUser(router, "CUSTOMER").then((me) => {
+      if (me) {
         setEmail(me.email);
-      })
-      .catch(() => router.replace("/auth/login"));
+      }
+    });
   }, [router]);
 
   return (
