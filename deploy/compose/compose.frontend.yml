@@ -1,0 +1,19 @@
+services:
+  frontend:
+    build:
+      context: ../..
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api
+    ports:
+      - "3000:3000"
+    command: ["pnpm", "--filter", "frontend", "start"]
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    external: true
+    name: full_stack_demo_network

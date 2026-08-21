@@ -1,0 +1,17 @@
+{
+  "name": "full-stack-demo-project",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build",
+    "dev:infra": "docker compose -f deploy/compose/compose.infra.yml up -d",
+    "dev:backend": "pnpm --filter backend dev",
+    "dev:worker": "pnpm --filter worker dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "seed": "pnpm --filter backend prisma:seed"
+  }
+}

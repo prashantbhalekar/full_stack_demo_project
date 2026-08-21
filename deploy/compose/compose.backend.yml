@@ -1,0 +1,39 @@
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: apps/backend/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/full_stack_demo
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: replace-with-strong-secret
+      JWT_REFRESH_SECRET: replace-with-strong-refresh-secret
+      JWT_ACCESS_TTL: 15m
+      JWT_REFRESH_TTL: 7d
+      PORT: 3001
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: ChangeMe123\!
+    ports:
+      - "3001:3001"
+    command: ["pnpm", "--filter", "backend", "start"]
+    networks:
+      - app_net
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: apps/worker/Dockerfile
+    environment:
+      REDIS_URL: redis://redis:6379
+      SMTP_HOST: ""
+      SMTP_PORT: ""
+      SMTP_USER: ""
+      SMTP_PASS: ""
+    command: ["pnpm", "--filter", "worker", "start"]
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    external: true
+    name: full_stack_demo_network

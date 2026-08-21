@@ -1,0 +1,73 @@
+:root {
+  --bg: #f5f3ef;
+  --surface: #fffefb;
+  --text: #191816;
+  --accent: #0f766e;
+  --danger: #b91c1c;
+  --muted: #6b7280;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top, #faf7f1 0%, #f0ece5 60%, #e9e4db 100%);
+  color: var(--text);
+}
+
+main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid #ddd8cf;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+input, button, select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #c7c0b3;
+  font-size: 14px;
+}
+
+button {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+button.secondary {
+  background: #334155;
+}
+
+button.danger {
+  background: var(--danger);
+}
+
+small.muted {
+  color: var(--muted);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PortalRole {
+  ADMIN
+  CUSTOMER
+  VENDOR
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+}
+
+enum OrganizationType {
+  CUSTOMER
+  VENDOR
+}
+
+enum OrganizationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                  String                @id @default(cuid())
+  email               String                @unique
+  passwordHash        String
+  portal              PortalRole
+  status              UserStatus            @default(PENDING)
+  organizationId      String?
+  organization        Organization?         @relation(fields: [organizationId], references: [id])
+  createdOrganizations Organization[]       @relation("OrganizationCreator")
+  reviewedApprovals   OrganizationApproval[] @relation("ApprovalReviewer")
+  refreshSessions     RefreshTokenSession[]
+  auditEvents         AuditEvent[]          @relation("AuditActor")
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+}
+
+model Organization {
+  id             String               @id @default(cuid())
+  type           OrganizationType
+  legalName      String
+  displayName    String
+  status         OrganizationStatus   @default(PENDING)
+  createdByUserId String
+  createdByUser  User                 @relation("OrganizationCreator", fields: [createdByUserId], references: [id])
+  users          User[]
+  approvals      OrganizationApproval[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+}
+
+model OrganizationApproval {
+  id              String         @id @default(cuid())
+  organizationId  String
+  organization    Organization   @relation(fields: [organizationId], references: [id])
+  status          ApprovalStatus @default(PENDING)
+  reviewedByUserId String?
+  reviewedByUser  User?          @relation("ApprovalReviewer", fields: [reviewedByUserId], references: [id])
+  reviewedAt      DateTime?
+  reason          String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model RefreshTokenSession {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  tokenHash  String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AuditEvent {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  actorUser   User?    @relation("AuditActor", fields: [actorUserId], references: [id])
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+}
