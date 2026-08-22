@@ -203,7 +203,23 @@ pnpm dev:frontend:local
 
 ## 7) One-Command Local Runtime
 
-Start all runtime pieces together (infra + backend + worker + frontend):
+Start all runtime pieces together (infra + prisma generate + migrate + seed + backend + worker + frontend):
+
+```bash
+make dev
+```
+
+Equivalent manual flow:
+
+```bash
+pnpm dev:infra
+DATABASE_URL='postgresql://postgres:postgres@localhost:5433/full_stack_demo' pnpm --filter backend prisma:generate
+DATABASE_URL='postgresql://postgres:postgres@localhost:5433/full_stack_demo' pnpm --filter backend prisma:migrate:deploy
+DATABASE_URL='postgresql://postgres:postgres@localhost:5433/full_stack_demo' pnpm --filter backend prisma:seed
+SKIP_INFRA=1 pnpm dev:all:local
+```
+
+Legacy direct runtime command (without prisma prep):
 
 ```bash
 pnpm dev:all:local
@@ -212,6 +228,25 @@ pnpm dev:all:local
 Note:
 
 - This script starts background processes and stops them on exit.
+
+---
+
+## 7.1) Makefile Shortcuts
+
+Primary Make targets:
+
+- `make install`: install dependencies
+- `make infra-up`: start postgres + redis
+- `make infra-down`: stop infra compose unit
+- `make clean`: stop frontend/backend/infra compose units, remove infra volumes, remove project docker network
+- `make migrate`: run backend prisma migrate deploy against local DB
+- `make seed`: run backend seed against local DB
+- `make backend`: run backend local wrapper
+- `make worker`: run worker local wrapper
+- `make frontend`: run frontend local wrapper
+- `make dev`: full local bootstrap and runtime
+- `make smoke`: run e2e smoke flow
+- `make lint`, `make typecheck`, `make test`, `make build`, `make check`: quality commands
 
 ---
 
@@ -275,7 +310,7 @@ pnpm exec husky init
 Configured behavior:
 
 - `.husky/pre-commit` runs `pnpm lint-staged`
-- `.husky/pre-push` runs `pnpm typecheck && pnpm test && pnpm build`
+- `.husky/pre-push` runs `pnpm check`
 
 Root `package.json` contains:
 
@@ -310,14 +345,31 @@ Deploy workflows:
 
 - .github/workflows/deploy-backend.yml
 - .github/workflows/deploy-frontend.yml
+- .github/workflows/deploy-full.yml
 
 Current CI expectations:
 
+- `ci` job: install, backend prisma generate, lint, typecheck, test, build
 - lint
 - typecheck
 - tests
 - build
 - backend live e2e job with postgres/redis services
+
+Deploy model summary:
+
+- `deploy-backend.yml`: independent backend/worker deploy path
+- `deploy-frontend.yml`: independent frontend deploy path
+- `deploy-full.yml`: manual coordinated full-stack release
+
+Branch to environment mapping:
+
+- `dev` -> `dev`
+- `uat` -> `uat`
+- `main` -> `prod`
+
+Deploy jobs are bound to GitHub Environments (`dev`, `uat`, `prod`).
+Manual dispatch supports environment override (`auto`, `dev`, `uat`, `prod`) for backend/frontend workflows.
 
 ---
 
@@ -362,17 +414,14 @@ Implemented endpoints:
 If you only want the fastest rebuild path:
 
 ```bash
-pnpm install
-pnpm dev:infra
-DATABASE_URL='postgresql://postgres:postgres@localhost:5433/full_stack_demo' pnpm --filter backend prisma:migrate:deploy
-DATABASE_URL='postgresql://postgres:postgres@localhost:5433/full_stack_demo' pnpm --filter backend prisma:seed
-pnpm dev:all:local
+make install
+make dev
 ```
 
 In another terminal:
 
 ```bash
-pnpm smoke:flow
+make smoke
 ```
 
 ---
