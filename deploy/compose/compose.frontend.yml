@@ -1,5 +1,6 @@
 services:
   frontend:
+    image: ${FRONTEND_IMAGE:-full-stack-demo/frontend:local}
     build:
       context: ../..
       dockerfile: apps/frontend/Dockerfile

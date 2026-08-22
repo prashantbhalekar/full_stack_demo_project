@@ -55,11 +55,23 @@ Default local ports are intentionally non-conflicting:
 pnpm install
 ```
 
+Or via Makefile:
+
+```bash
+make install
+```
+
 ## Run Local Infra
 
 ```bash
 pnpm dev:infra
 docker-compose -f deploy/compose/compose.infra.yml ps
+```
+
+Or via Makefile:
+
+```bash
+make infra-up
 ```
 
 ## Migrate and Seed
@@ -124,11 +136,37 @@ Stop local infra:
 pnpm dev:infra:down
 ```
 
+Or via Makefile:
+
+```bash
+make infra-down
+```
+
 Run one-command CLI smoke flow (register -> approval -> login checks):
 
 ```bash
 pnpm smoke:flow
 ```
+
+Or via Makefile:
+
+```bash
+make smoke
+```
+
+## Makefile Shortcuts
+
+- `make install`: install dependencies
+- `make infra-up`: start postgres + redis
+- `make infra-down`: stop infra compose unit
+- `make migrate`: run backend prisma migrate deploy against local DB
+- `make seed`: run backend seed against local DB
+- `make backend`: run backend with local defaults
+- `make worker`: run worker with local defaults
+- `make frontend`: run frontend with local defaults
+- `make dev`: run infra + backend + worker + frontend
+- `make smoke`: run end-to-end smoke flow
+- `make lint`, `make typecheck`, `make test`, `make build`, `make check`: quality commands
 
 ## Quality Checks
 
@@ -190,7 +228,39 @@ Frontend integration tests are included for auth redirect guard behavior.
 
 - `ci.yml`: lint, typecheck, tests, build
 - `ci.yml` includes a `backend-live-e2e` job with PostgreSQL and Redis service containers
-- `deploy-backend.yml`: triggers on backend/worker/shared changes, runs migrate deploy, builds backend + worker
-- `deploy-frontend.yml`: triggers on frontend/shared changes, builds/deploys frontend only
+- `deploy-backend.yml`: triggers on `dev`, `uat`, `main` for backend/worker/shared changes, builds and pushes backend + worker images, then deploys backend unit independently
+- `deploy-frontend.yml`: triggers on `dev`, `uat`, `main` for frontend/shared changes, builds and pushes frontend image, then deploys frontend unit independently
+- `deploy-full.yml`: manual coordinated release for backend + worker + frontend in one run
 
 This split is designed so frontend deploys do not restart backend services and backend deploys do not restart frontend services.
+
+## Branch to Environment Mapping
+
+- `dev` branch -> `dev` environment
+- `uat` branch -> `uat` environment
+- `main` branch -> `prod` environment
+
+The deploy workflows resolve this mapping via `deploy/scripts/branch_to_env.sh` and use the resolved environment in image tags.
+
+Deploy jobs are bound to GitHub Environments (`dev`, `uat`, `prod`) so each branch uses environment-scoped secrets automatically. Manual dispatch for backend/frontend also supports environment override (`auto`, `dev`, `uat`, `prod`).
+
+## Deployment Scripts
+
+- `deploy/scripts/deploy_backend.sh`: deploy backend + worker compose unit
+- `deploy/scripts/deploy_frontend.sh`: deploy frontend compose unit
+- `deploy/scripts/deploy_full.sh`: coordinated deploy wrapper
+- `deploy/scripts/smoke_backend.sh`: backend health smoke check
+- `deploy/scripts/smoke_frontend.sh`: frontend route smoke checks
+
+## Required GitHub Secrets For Deploy
+
+Set these secrets in each GitHub Environment (`dev`, `uat`, `prod`) if you want deploy steps to run:
+
+- `DEPLOY_SSH_HOST`
+- `DEPLOY_SSH_USER`
+- `DEPLOY_SSH_KEY`
+- `DEPLOY_APP_DIR`
+- `BACKEND_BASE_URL` (for backend smoke checks)
+- `FRONTEND_BASE_URL` (for frontend smoke checks)
+
+If SSH deploy secrets are not present, image build/push still runs and the workflow logs a deployment-skipped notice.

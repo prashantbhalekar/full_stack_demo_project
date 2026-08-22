@@ -1,43 +1,30 @@
-name: Deploy Backend
+name: Deploy Full
 
 on:
-  push:
-    branches: [dev, uat, main]
-    paths:
-      - "apps/backend/**"
-      - "apps/worker/**"
-      - "packages/shared-types/**"
-      - "deploy/compose/compose.backend.yml"
-      - "deploy/scripts/**"
   workflow_dispatch:
     inputs:
       environment:
-        description: "Override target environment"
-        required: false
-        default: auto
+        description: "Target environment"
+        required: true
+        default: "dev"
         type: choice
         options:
-          - auto
           - dev
           - uat
           - prod
 
 jobs:
-  deploy-backend-worker:
+  deploy-full:
     runs-on: ubuntu-latest
-    environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment != 'auto' && github.event.inputs.environment || (github.ref_name == 'main' && 'prod' || github.ref_name == 'uat' && 'uat' || 'dev') }}
+    environment: ${{ inputs.environment }}
     concurrency:
-      group: deploy-backend-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment != 'auto' && github.event.inputs.environment || (github.ref_name == 'main' && 'prod' || github.ref_name == 'uat' && 'uat' || 'dev') }}
+      group: deploy-full-${{ inputs.environment }}
       cancel-in-progress: false
     permissions:
       contents: read
       packages: write
     steps:
       - uses: actions/checkout@v4
-      - name: Resolve environment and image tags
-        id: vars
-        run: |
-          bash deploy/scripts/branch_to_env.sh "${GITHUB_REF_NAME}" "${GITHUB_SHA}" "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment != 'auto' && github.event.inputs.environment || '' }}" >> "$GITHUB_OUTPUT"
       - uses: pnpm/action-setup@v4
         with:
           version: 9.12.0
@@ -51,6 +38,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare image tag
+        id: vars
+        run: |
+          env_name="${{ inputs.environment }}"
+          short_sha="${GITHUB_SHA:0:7}"
+          echo "image_tag=${env_name}-${short_sha}" >> "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -58,7 +51,6 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/backend:${{ steps.vars.outputs.image_tag }}
-            ghcr.io/${{ github.repository }}/backend:${{ steps.vars.outputs.environment }}
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -66,11 +58,14 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/worker:${{ steps.vars.outputs.image_tag }}
-            ghcr.io/${{ github.repository }}/worker:${{ steps.vars.outputs.environment }}
-      - run: pnpm --filter backend prisma:migrate:deploy
-      - run: pnpm --filter backend build
-      - run: pnpm --filter worker build
-      - name: Deploy backend and worker via SSH
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/frontend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/frontend:${{ steps.vars.outputs.image_tag }}
+      - name: Deploy full stack via SSH
         if: ${{ secrets.DEPLOY_SSH_HOST != '' && secrets.DEPLOY_SSH_USER != '' && secrets.DEPLOY_SSH_KEY != '' }}
         env:
           DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
@@ -87,13 +82,19 @@ jobs:
             cd \"${DEPLOY_APP_DIR:-$PWD}\"
             export BACKEND_IMAGE=ghcr.io/${{ github.repository }}/backend:${{ steps.vars.outputs.image_tag }}
             export WORKER_IMAGE=ghcr.io/${{ github.repository }}/worker:${{ steps.vars.outputs.image_tag }}
-            bash deploy/scripts/deploy_backend.sh
+            export FRONTEND_IMAGE=ghcr.io/${{ github.repository }}/frontend:${{ steps.vars.outputs.image_tag }}
+            bash deploy/scripts/deploy_full.sh
           "
       - name: Backend smoke checks
         if: ${{ secrets.BACKEND_BASE_URL != '' }}
         env:
           BACKEND_BASE_URL: ${{ secrets.BACKEND_BASE_URL }}
         run: bash deploy/scripts/smoke_backend.sh
+      - name: Frontend smoke checks
+        if: ${{ secrets.FRONTEND_BASE_URL != '' }}
+        env:
+          FRONTEND_BASE_URL: ${{ secrets.FRONTEND_BASE_URL }}
+        run: bash deploy/scripts/smoke_frontend.sh
       - name: Deployment skipped notice
         if: ${{ secrets.DEPLOY_SSH_HOST == '' || secrets.DEPLOY_SSH_USER == '' || secrets.DEPLOY_SSH_KEY == '' }}
         run: echo "Deployment step skipped because SSH secrets are not configured for this environment."

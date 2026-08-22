@@ -1,5 +1,6 @@
 services:
   backend:
+    image: ${BACKEND_IMAGE:-full-stack-demo/backend:local}
     build:
       context: ../..
       dockerfile: apps/backend/Dockerfile
@@ -20,6 +21,7 @@ services:
       - app_net
 
   worker:
+    image: ${WORKER_IMAGE:-full-stack-demo/worker:local}
     build:
       context: ../..
       dockerfile: apps/worker/Dockerfile
