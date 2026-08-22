@@ -4,6 +4,8 @@
 
 This file is a practical runbook to recreate this project end-to-end from an empty directory to a fully working local setup.
 
+For detailed technology/version matrix, see [TECH_STACK.md](TECH_STACK.md).
+
 Project objective:
 
 - Minimal full-stack auth + onboarding approval flow.

@@ -11,6 +11,8 @@ Minimal monorepo MVP for auth + onboarding approvals with independent FE and BE 
 - DB: PostgreSQL
 - Queue/cache: Redis
 
+Detailed version matrix: [TECH_STACK.md](TECH_STACK.md)
+
 ## Implemented MVP
 
 - Roles: `ADMIN`, `CUSTOMER`, `VENDOR`
